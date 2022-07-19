@@ -8,27 +8,16 @@ on:
 jobs:
   build-and-push-to-gcr:
     runs-on: ubuntu-latest
-    env:
-      IMAGE_NAME: gcr.io/${{ secrets.GCP_PROJECT_ID }}/${{ secrets.GCP_APP_NAME }}
-
     steps:
-      - uses: actions/checkout@v3
-
-      - id: auth
-        name: Authenticate to Google Cloud
-        uses: google-github-actions/auth@v0
+      - uses: actions/checkout@v2
+      - name: Get the tag name
+        id: get_tag_name
+        run: echo ::set-output name=GIT_TAG_NAME::${GITHUB_REF/refs\/tags\//}
+      - uses: RafikFarhad/push-to-gcr-github-action@v4.1
         with:
-          workload_identity_provider: projects/994949373580/locations/global/workloadIdentityPools/first-pool/*
-          service_account: kkkooo@webcoder-1502486239261.iam.gserviceaccount.com
-
-      - name: Set up Google Cloud SDK
-        uses: google-github-actions/setup-gcloud@v0
-
-      - name: Configure Docker
-        run: gcloud auth configure-docker --quiet
-
-      - name: Build Docker image
-        run: docker build . -t $IMAGE_NAME
-
-      - name: Push Docker image
-        run: docker push $IMAGE_NAME
+          gcloud_service_key: ${{ secrets.GCLOUD_SERVICE_KEY }}
+          registry: gcr.io
+          project_id: buoyant-road-354520
+          image_name: test-gcr
+          image_tag: latest,${{ steps.get_tag_name.outputs.GIT_TAG_NAME }}
+          dockerfile: ./Dockerfile
